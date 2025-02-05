@@ -16,8 +16,8 @@ export class UsersController {
     }
 
     @Get('search')
-    async searchUser(@Query() query: SearchQuery): Promise<User[] | User> {
-        const users = await this.usersService.getUserByInfo({...query});
+    async searchUser(@Query() query: SearchQuery, @Request() request): Promise<User[] | User> {
+        const users = await this.usersService.getUserByInfo({...query}, request.user.id);
         if (!users) {
             throw new UserSearchException();
         }

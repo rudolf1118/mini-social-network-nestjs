@@ -1,7 +1,6 @@
 import { Controller, HttpCode, HttpStatus, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { ObjectId } from 'mongodb';
 import { TokenResponse } from './auth.service';
 
 type AuthInput = {
@@ -19,7 +18,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
 
     @Post('login')
-    login(@Body() input: AuthInput): Promise<any> {
+    login(@Body() input: AuthInput): Promise<TokenResponse> {
         return this.authService.login(input);
     }
 

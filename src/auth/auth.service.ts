@@ -52,7 +52,7 @@ export class AuthService {
         return user;
     }
 
-    async authenticate(input: AuthInput): Promise<any> {
+    async authenticate(input: AuthInput): Promise<User> {
         const user = await this.validateUser(input);
 
         if (!user) {

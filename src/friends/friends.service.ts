@@ -4,70 +4,98 @@ import { Model } from 'mongoose';
 import { UsersService } from '../users/users.service';
 import { FriendRequest } from './schemas/friend-request.schema';
 import { Types } from 'mongoose';
+import { UserNotFoundException, FriendRequestException } from '../common/exceptions/index';
+import { ActionParams, DefaultResponse, FriendRequestResponse, FriendResponse } from '../common/types/common.types';
+import { User } from '../users/schemas/user.schema';
+import { UserSearchException } from '../common/exceptions/index';
 
 @Injectable()
 export class FriendsService {
     constructor(private usersService: UsersService, @InjectModel(FriendRequest.name) private friendRequestModel: Model<FriendRequest>) {}
 
-    async getFriends(userId: string ): Promise<any[]> {
+    async getFriends(userId: string ): Promise<User[]> {
         const user = await this.usersService.getUserById(userId);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserSearchException();
         }
-        return user.friends.map(friend => friend.friendId);
+
+        const friends = await this.usersService.getUsersByIds(user.friends.map(friend => friend.friendId));
+        if (!friends || friends.length === 0) {
+            throw new FriendRequestException('Friends not found');
+        }
+        return friends;
     }
 
-
-    async addFriend (userId: string, friendId: string): Promise<any> {
-        const user = await this.usersService.getUserById(userId);
-        const friend = await this.usersService.getUserById(friendId);
+    async addFriend (userId: string, friendId: string): Promise<FriendResponse> {
+        const [user, friend] = await Promise.all([
+            this.usersService.getUserById(userId),
+            this.usersService.getUserById(friendId)
+        ]);
 
         if (!friend || !user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException(userId);
         }
-        if (friend.friends.some(friend => friend.friendId === userId) || user?.friends.some(friend => friend.friendId === friendId) || friendId === userId) {
+        if (friend.friends.some(friend => friend.friendId === userId) 
+            || user?.friends.some(friend => friend.friendId === friendId) 
+            || friendId === userId) {
             throw new ConflictException('Friend already added');
         }
 
-        friend.friends.push({ friendId, addedAt: new Date() });
-        user.friends.push({ friendId, addedAt: new Date() });
+        friend.friends.push({ friendId: userId, addedAt: new Date() });
+        user.friends.push({ friendId: friendId, addedAt: new Date() });
+
         await friend.save();
         await user.save();
         return {
             status: 'success',
-            message: 'Friend added successfully'
+            message: 'Friend added successfully',
+            friend,
         };
     }
 
-    async sendFriendRequest(userId: string, friendId: string): Promise<any> {
-        const senderId = await this.usersService.getUserById(userId);
-        const receiverId = await this.usersService.getUserById(friendId);
-
-        if (!senderId || !receiverId) {
-            throw new NotFoundException('User not found');
-        }
-
-        if (await this.friendRequestModel.findOne({ 
+    async sendFriendRequest(userId: string, friendId: string): Promise<FriendRequestResponse> {
+        const [sender, receiver] = await Promise.all([
+            this.usersService.getUserById(userId),
+            this.usersService.getUserById(friendId)
+        ]);
+        const existingFriendship = await this.friendRequestModel.findOne({
             $or: [
                 { senderId: userId, receiverId: friendId },
                 { senderId: friendId, receiverId: userId }
             ]
-        })) {
-            throw new ConflictException('Friend request already sent');
+        });
+
+        if (existingFriendship) {
+            throw new ConflictException('Friend request already exists');
+        }
+        if (!sender || !receiver) {
+            throw new UserNotFoundException(userId);
         }
         if (userId === friendId) {
-            throw new ConflictException('You cannot send a friend request to yourself');
+            throw new FriendRequestException('You cannot send a friend request to yourself');
         }
-        const friendRequest = new this.friendRequestModel({ senderId: userId, receiverId: friendId });
-        await friendRequest.save();
+
+        const existingRequest = await this.friendRequestModel.findOne({
+            $or: [
+                { senderId: userId, receiverId: friendId },
+                { senderId: friendId, receiverId: userId }
+            ]
+        });
+
+        if (existingRequest) {
+            throw new ConflictException('Friend request already exists');
+        }
+
+        const friendRequest = await this.friendRequestModel.create({ senderId: sender.id, receiverId: receiver.id });
 
         return {
             status: 'success',
-            message: 'Friend request sent successfully'
+            message: 'Friend request sent successfully',
+            friendRequest,
         };
     }
 
-    async getFriendsRequests(userId: string): Promise<any> {
+    async getFriendsRequests(userId: string): Promise<FriendRequestResponse> {
         const friendRequestsToMe = await this.friendRequestModel.find({
             receiverId: userId
         });
@@ -86,38 +114,43 @@ export class FriendsService {
             });
         }
         if (!friendRequests) {
-            throw new NotFoundException('Friend requests not found');
+            throw new FriendRequestException('Friend requests not found');
         }
-        return friendRequests;
+        return {
+            status: 'success',
+            message: 'Friend requests found',
+            friendRequest: friendRequests,
+        };
     }
 
-    async actionWithFriendRequest(userId: string, requestId: string, status: 'accept' | 'decline' | 'pending', friendId: string = ""): Promise<any> {
+    async actionWithFriendRequest(params: ActionParams): Promise<DefaultResponse> {
         let friendRequest;
-        if (friendId) {
+
+        if (params.friendId) {
             friendRequest = await this.friendRequestModel.findOne({ 
                 $and: [
-                    { senderId: friendId },
-                    { receiverId: userId }
+                    { senderId: params.friendId },
+                    { receiverId: params.userId }
                 ]
             });
         } else {
             friendRequest = await this.friendRequestModel.findOne({ 
                 $and: [
-                    { _id: new Types.ObjectId(requestId) },
-                    { receiverId: userId }
+                    { _id: params.requestId },
+                    { receiverId: params.userId }
                 ]
             });
         }
 
         if (!friendRequest) {
-            throw new NotFoundException('Friend request not found');
+            throw new FriendRequestException('Friend request not found');
         }
 
-        friendRequest.status = status;
+        friendRequest.status = params.status;
 
-        switch (status) {
+        switch (params.status) {
             case 'accept':
-                await this.addFriend(userId, friendRequest.senderId);
+                await this.addFriend(params.userId, friendRequest.senderId);
                 await friendRequest.deleteOne();
                 break;
             case 'decline':
@@ -130,14 +163,18 @@ export class FriendsService {
 
         return {
             status: 'success',
-            message: status === 'pending' 
-                ? 'Friend request is pending'
-                : `Friend request ${status}ed successfully`
+            message: params.status
+                ? `Friend request ${params.status}ed successfully`
+                : 'Friend request is pending'
         };
     }
 
-    async handleFriendRequest(requestId: string, userId: string, status: 'accept' | 'decline' | 'pending' = 'pending', friendId: string = ""): Promise<any> {
-        const user = await this.usersService.getUserById(userId);
-        return this.actionWithFriendRequest(user?.id, requestId, status, friendId);
+    async handleFriendRequest(params: ActionParams): Promise<DefaultResponse> {
+        const user = await this.usersService.getUserById(params.userId);
+        
+        if (!user) {
+            throw new UserNotFoundException('User not found');
+        }
+        return this.actionWithFriendRequest(params);
     }
 }

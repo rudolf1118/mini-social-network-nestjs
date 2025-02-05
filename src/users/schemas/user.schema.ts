@@ -32,20 +32,6 @@ export class User extends Document {
 
     @Prop({ required: true, index: true })
     age: number;
-
-    @Prop({
-        type: [{
-            senderId: { type: String, required: true },
-            status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },
-            createdAt: { type: Date, default: Date.now }
-        }],
-        default: []
-    })
-    friendRequests: Array<{
-        senderId: string;
-        status: 'pending' | 'accepted' | 'declined';
-        createdAt: Date;
-    }>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

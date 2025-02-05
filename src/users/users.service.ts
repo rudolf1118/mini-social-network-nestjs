@@ -40,9 +40,7 @@ export class UsersService {
         const users = await this.userModel
             .find({ _id: { $in: ids } })
             .select('-password -friendRequests')
-            .lean()
             .exec();
-    
         if (!users.length) {
             throw new UserSearchException();
         }
@@ -50,7 +48,7 @@ export class UsersService {
         return users;
     }
 
-    async getUserByInfo(creeds: SearchQuery): Promise<User[]> {
+    async getUserByInfo(creeds: SearchQuery, userId: string): Promise<User[]> {
         const query = Object.keys(creeds).reduce((acc, key) => {
             if (creeds[key] !== undefined) {
                 acc[key] = creeds[key];
@@ -62,8 +60,9 @@ export class UsersService {
             throw new BadRequestException('At least one search parameter must be provided');
         }
     
-        const users = await this.userModel.find(query);
-    
+        let users = await this.userModel.find(query);
+        users = users.filter(user => user.id !== userId);
+
         if (users.length === 0) {
             throw new UserSearchException();
         }
