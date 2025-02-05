@@ -1,8 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserNotFoundException, UserSearchException } from '../common/exceptions/index';
+import { SearchQuery } from '../common/types/common.types';
 
 @Injectable()
 export class UsersService {
@@ -19,43 +21,53 @@ export class UsersService {
         return createdUser.save();
     }
 
-    async findUserByUsernameOrEmail(username: string | undefined, email: string | undefined): Promise<User | null> {
+    async findUserByUsernameOrEmail(username?: string, email?: string): Promise<User> {
         const user = await this.userModel.findOne({ $or: [{ username }, { email }] });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserSearchException();
         }
         return user;
     }
 
-    async getUserById(id: string): Promise<User | null> {
+    async getUserById(id: string): Promise<User> {
         const user = await this.userModel.findById(id);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException(id);
         }
         return user;
     }
-    async getUsersByIds(ids: string[]): Promise<any> {
-        const users = await this.userModel.find({ _id: { $in: ids } });
-        if (!users) {
-            throw new NotFoundException('Users not found');
+    async getUsersByIds(ids: string[]): Promise<User[]> {
+        const users = await this.userModel
+            .find({ _id: { $in: ids } })
+            .select('-password -friendRequests')
+            .lean()
+            .exec();
+    
+        if (!users.length) {
+            throw new UserSearchException();
         }
-        return {
-            status: 'success',
-            users,
-        };
+    
+        return users;
     }
 
-    async getUserByInfo(creds: { username?: string, email?: string, age?: number, name?:string, surname?:string }): Promise<User[] | null> {
-        const query = {};
-        if (creds.username) query['username'] = creds.username;
-        if (creds.email) query['email'] = creds.email;
-        if (creds.age) query['age'] = creds.age;
-        if (creds.name) query['name'] = creds.name;
-        if (creds.surname) query['surname'] = creds.surname;
-        const user = await this.userModel.find({ $and: [query] });
-        if (!user) {
-            throw new NotFoundException('User not found');
+    async getUserByInfo(creeds: SearchQuery): Promise<User[]> {
+        const query = Object.keys(creeds).reduce((acc, key) => {
+            if (creeds[key] !== undefined) {
+                acc[key] = creeds[key];
+            }
+            return acc;
+        }, {});
+    
+        if (Object.keys(query).length === 0) {
+            throw new BadRequestException('At least one search parameter must be provided');
         }
-        return user;
+    
+        const users = await this.userModel.find(query);
+    
+        if (users.length === 0) {
+            throw new UserSearchException();
+        }
+    
+        return users;
     }
 }

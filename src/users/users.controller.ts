@@ -1,9 +1,9 @@
-import { Controller, Get, Post,Body, Req, UseGuards, UnauthorizedException, Request, Query } from '@nestjs/common';
-// import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { UsersService } from './users.service';
+import { UserSearchException } from '../common/exceptions/index';
+import { SearchQuery } from '../common/types/common.types';
 
 @Controller()
 @UseGuards(AuthGuard)
@@ -16,7 +16,11 @@ export class UsersController {
     }
 
     @Get('search')
-    async searchUser(@Query() query: { username?: string, email?: string, age?: number, name?:string, surname?:string }): Promise<User[] | User | null> {
-        return this.usersService.getUserByInfo({...query});
+    async searchUser(@Query() query: SearchQuery): Promise<User[] | User> {
+        const users = await this.usersService.getUserByInfo({...query});
+        if (!users) {
+            throw new UserSearchException();
+        }
+        return users;
     }
 }

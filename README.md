@@ -1,100 +1,140 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Mini Social Network API Documentation
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This document provides an overview of the Mini Social Network API, including its features, architecture, and usage.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+The Mini Social Network API is a RESTful service built with NestJS, designed to handle user authentication, friend management, and user search functionalities.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Technologies Used
 
-## Project setup
+- **NestJS**: A progressive Node.js framework for building efficient and scalable server-side applications.
+- **MongoDB**: A NoSQL database used for storing user and friend data, accessed via Mongoose ODM.
+- **JWT**: JSON Web Tokens for secure authentication and authorization.
+- **Passport**: Middleware for handling authentication.
+- **Class Validator**: For validating data transfer objects (DTOs).
+- **bcrypt**: For hashing passwords securely.
 
-```bash
-$ npm install
-```
+## Architecture
 
-## Compile and run the project
+The application follows the MVC (Model-View-Controller) pattern and Clean Architecture principles:
 
-```bash
-# development
-$ npm run start
+- **Controllers**: Handle HTTP requests and responses.
+- **Services**: Contain business logic.
+- **DTOs**: Define data transfer objects.
+- **Schemas**: Define MongoDB models.
+- **Guards**: Handle authentication.
+- **Filters**: Handle global exception handling.
 
-# watch mode
-$ npm run start:dev
+## Features
 
-# production mode
-$ npm run start:prod
-```
+- User authentication (register/login)
+- JWT-based authorization
+- Friend request system
+- User search functionality
+- Global error handling
 
-## Run tests
+## API Endpoints
 
-```bash
-# unit tests
-$ npm run test
+### Authentication
 
-# e2e tests
-$ npm run test:e2e
+#### Register User
 
-# test coverage
-$ npm run test:cov
-```
+- **Endpoint**: `POST /api/auth/register`
+- **Request Body**:
+  ```json
+  {
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "Password123!",
+    "name": "John",
+    "surname": "Doe",
+    "age": 25
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "access_token": "eyJhbGciOiJIUzI1...",
+    "user_id": "507f1f77bcf86cd799439011",
+    "expiry": 3600
+  }
+  ```
 
-## Deployment
+#### Login
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- **Endpoint**: `POST /api/auth/login`
+- **Request Body**:
+  ```json
+  {
+    "email": "john@example.com",
+    "password": "Password123!"
+  }
+  ```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Users
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+#### Get Current User
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- **Endpoint**: `GET /api/me`
+- **Headers**: `Authorization: Bearer <token>`
 
-## Resources
+#### Search Users
 
-Check out a few resources that may come in handy when working with NestJS:
+- **Endpoint**: `GET /api/search`
+- **Query Parameters**: `username`, `email`, `age`, `name`, `surname`
+- **Headers**: `Authorization: Bearer <token>`
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Friends
 
-## Support
+#### Send Friend Request
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- **Endpoint**: `POST /api/friends/sendRequest`
+- **Query Parameter**: `friendId`
+- **Headers**: `Authorization: Bearer <token>`
 
-## Stay in touch
+#### Get Friend Requests
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- **Endpoint**: `GET /api/friends/requests`
+- **Headers**: `Authorization: Bearer <token>`
 
-## License
+#### Action on Friend Request
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-# mini-social-network-nestjs
+- **Endpoint**: `GET /api/friends/actionRequest`
+- **Query Parameters**: `requestId`, `friendId`, `status` (accept/decline/pending)
+- **Headers**: `Authorization: Bearer <token>`
+
+## Error Handling
+
+The API uses a global exception filter to standardize error responses. Common HTTP status codes include:
+
+- **200**: Success
+- **400**: Bad Request
+- **401**: Unauthorized
+- **403**: Forbidden
+- **404**: Not Found
+- **409**: Conflict
+- **500**: Internal Server Error
+
+## Getting Started
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Create a `.env` file** with the following variables:
+   ```
+   MONGODB_SERVER=your_mongodb_uri
+   JWT_SECRET=your_jwt_secret
+   ```
+
+4. **Run the development server**:
+   ```bash
+   npm run start:dev
+   ```

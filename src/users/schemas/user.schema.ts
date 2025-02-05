@@ -3,16 +3,16 @@ import { Document } from "mongoose";
 
 @Schema()
 export class User extends Document {
-    @Prop({ required: true })
+    @Prop({ required: true, index: true })
     username: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, index: true })
     name: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, index: true })
     surname: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, index: true })
     email: string;
 
     @Prop({ required: true })
@@ -30,7 +30,7 @@ export class User extends Document {
         addedAt: Date;
     }>;
 
-    @Prop({ required: true })
+    @Prop({ required: true, index: true })
     age: number;
 
     @Prop({
