@@ -1,0 +1,150 @@
+openapi: 3.0.0
+info:
+  title: Mini Social Network API
+  description: API documentation for the Mini Social Network
+  version: 1.0.0
+servers:
+  - url: http://localhost:PORT/api
+    description: Local server
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+                surname:
+                  type: string
+                age:
+                  type: integer
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  user_id:
+                    type: string
+                  expiry:
+                    type: integer
+
+  /auth/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  user_id:
+                    type: string
+                  expiry:
+                    type: integer
+
+  /friends/sendRequest:
+    post:
+      summary: Send a friend request
+      parameters:
+        - name: friendId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Friend request sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  friendRequest:
+                    type: object
+
+  /friends/requests:
+    get:
+      summary: Get friend requests
+      responses:
+        '200':
+          description: Friend requests found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  friendRequest:
+                    type: array
+                    items:
+                      type: object
+
+  /friends/actionRequest:
+    get:
+      summary: Action on a friend request
+      parameters:
+        - name: requestId
+          in: query
+          schema:
+            type: string
+        - name: friendId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [accept, decline, pending]
+      responses:
+        '200':
+          description: Friend request actioned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string

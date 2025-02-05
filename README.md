@@ -132,6 +132,7 @@ The API uses a global exception filter to standardize error responses. Common HT
    ```
    MONGODB_SERVER=your_mongodb_uri
    JWT_SECRET=your_jwt_secret
+   PORT=your_port
    ```
 
 4. **Run the development server**:
