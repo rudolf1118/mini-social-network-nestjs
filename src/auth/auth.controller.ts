@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { ObjectId } from 'mongodb';
 import { TokenResponse } from './auth.service';
+
 type AuthInput = {
     username?: string;
     email?: string;

@@ -4,7 +4,7 @@ import { User } from '../users/schemas/user.schema';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { ObjectId } from 'mongoose';
+import { ObjectId } from 'mongodb';
 
 type AuthInput = {
     username?: string;
@@ -22,6 +22,7 @@ type CreateUserInput = {
 export type TokenResponse = {
     access_token: string;
     user_id: string | number | ObjectId;
+    expiry: number;
 }
 
 @Injectable()
@@ -31,10 +32,15 @@ export class AuthService {
     async generateToken(user: User): Promise<TokenResponse> {
         const payload = { sub: user._id, password: user.password, role: user.role };
         const token = this.jwtService.sign(payload);
-
+        if (!token) {
+            throw new BadRequestException('Token not generated');
+        }
+        const decoded = this.jwtService.decode(token);
+        const expiry = decoded['exp'];
         return {
             access_token: token,
-            user_id: user._id as string
+            user_id: user._id as string,
+            expiry,
         };
     }
 
@@ -57,12 +63,9 @@ export class AuthService {
     }
 
     async register(candidate: CreateUserDto): Promise<TokenResponse> {
-        console.log(candidate)
         const { password, ...rest } = candidate;
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(hashedPassword)
         const createdUser = await this.usersService.createUsers({ ...rest, password: hashedPassword });
-        console.log(createdUser)
         if (!createdUser) {
             throw new BadRequestException('User not created');
         }
