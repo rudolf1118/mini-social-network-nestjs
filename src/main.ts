@@ -14,3 +14,5 @@ async function bootstrap() {
   
   await app.listen(process.env.PORT as string || 3000);
 }
+
+bootstrap();

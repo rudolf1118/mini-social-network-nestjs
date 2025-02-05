@@ -4,26 +4,7 @@ import { User } from '../users/schemas/user.schema';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { ObjectId } from 'mongodb';
-
-type AuthInput = {
-    username?: string;
-    email?: string;
-    password: string;
-}
-type CreateUserInput = {
-    username: string;
-    email: string;
-    password: string;
-    name: string;
-    surname: string;
-}
-
-export type TokenResponse = {
-    access_token: string;
-    user_id: string | number | ObjectId;
-    expiry: number;
-}
+import { AuthInput, TokenResponse } from '../common/types/common.types';
 
 @Injectable()
 export class AuthService {

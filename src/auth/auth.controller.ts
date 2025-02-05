@@ -1,15 +1,7 @@
 import { Controller, HttpCode, HttpStatus, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { TokenResponse } from './auth.service';
-
-type AuthInput = {
-    username?: string;
-    email?: string;
-    password: string;
-}
-
-
+import { AuthInput, TokenResponse } from '../common/types/common.types';
 
 @Controller('auth')
 export class AuthController {

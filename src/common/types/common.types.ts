@@ -29,3 +29,23 @@ export interface DefaultResponse {
     status: string,
     message: string
 }
+
+export type AuthInput = {
+    username?: string;
+    email?: string;
+    password: string;
+}
+
+export type CreateUserInput = {
+    username: string;
+    email: string;
+    password: string;
+    name: string;
+    surname: string;
+}
+
+export interface TokenResponse {
+    access_token: string;
+    user_id: string;
+    expiry: number;
+}
